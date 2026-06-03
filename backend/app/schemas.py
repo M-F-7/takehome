@@ -5,6 +5,8 @@ from typing import Optional
 class ChatMessage(BaseModel):
     message: str
     history: list[dict] = Field(default_factory=list)
+    customer_email: Optional[str] = None
+    ticket_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -20,6 +22,7 @@ class TicketCreate(BaseModel):
     message: str
     category: str = "GENERAL"
     source: str = "user"
+    customer_email: Optional[str] = None
 
 
 class TicketUpdate(BaseModel):
@@ -35,7 +38,24 @@ class Ticket(BaseModel):
     category_label: str
     status: str
     source: str
+    customer_email: Optional[str] = None
     note: Optional[str] = None
     response: Optional[str] = None
     created_at: str
     updated_at: str
+
+
+class UserCredentials(BaseModel):
+    email: str
+    password: str
+
+
+class UserProfile(BaseModel):
+    email: str
+    created_at: str
+
+
+class PasswordChange(BaseModel):
+    email: str
+    current_password: str
+    new_password: str
