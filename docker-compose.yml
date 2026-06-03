@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+
+  proxy:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
