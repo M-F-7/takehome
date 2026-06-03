@@ -17,6 +17,31 @@ def row_to_ticket(row) -> Ticket:
     return Ticket(**dict(row))
 
 
+def get_ticket(ticket_id: str) -> Ticket | None:
+    with get_connection() as connection:
+        row = connection.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+    return row_to_ticket(row) if row else None
+
+
+def get_ticket_messages(ticket_id: str) -> list[dict]:
+    with get_connection() as connection:
+        rows = connection.execute(
+            "SELECT role, content FROM ticket_messages WHERE ticket_id = ? ORDER BY id ASC",
+            (ticket_id,),
+        ).fetchall()
+    return [{"role": row["role"], "content": row["content"]} for row in rows]
+
+
+def append_ticket_message(ticket_id: str, role: str, content: str) -> None:
+    with DB_LOCK:
+        with get_connection() as connection:
+            connection.execute(
+                "INSERT INTO ticket_messages (ticket_id, role, content, created_at) VALUES (?, ?, ?, ?)",
+                (ticket_id, role, content, now_iso()),
+            )
+            connection.commit()
+
+
 def load_tickets() -> list[dict]:
     with get_connection() as connection:
         rows = connection.execute(

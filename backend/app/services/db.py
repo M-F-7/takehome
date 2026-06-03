@@ -39,6 +39,15 @@ def init_db() -> None:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS ticket_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ticket_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY(ticket_id) REFERENCES tickets(id)
+                );
                 """
             )
             connection.commit()
