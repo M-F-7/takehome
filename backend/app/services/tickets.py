@@ -1,40 +1,28 @@
-import json
 from datetime import datetime, timezone
-from threading import Lock
 from typing import Optional
 from uuid import uuid4
 
 from fastapi import HTTPException
 
-from app.core.config import TICKETS_PATH
 from app.core.prompts import CATEGORY_LABELS
 from app.schemas import Ticket
-
-TICKETS_LOCK = Lock()
+from app.services.db import DB_LOCK, get_connection
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def ensure_tickets_file() -> None:
-    if not TICKETS_PATH.exists():
-        TICKETS_PATH.write_text("[]", encoding="utf-8")
+def row_to_ticket(row) -> Ticket:
+    return Ticket(**dict(row))
 
 
 def load_tickets() -> list[dict]:
-    ensure_tickets_file()
-    with TICKETS_PATH.open("r", encoding="utf-8") as handle:
-        try:
-            data = json.load(handle)
-            return data if isinstance(data, list) else []
-        except json.JSONDecodeError:
-            return []
-
-
-def save_tickets(tickets: list[dict]) -> None:
-    with TICKETS_PATH.open("w", encoding="utf-8") as handle:
-        json.dump(tickets, handle, ensure_ascii=False, indent=2)
+    with get_connection() as connection:
+        rows = connection.execute(
+            "SELECT * FROM tickets ORDER BY updated_at DESC, created_at DESC"
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def create_ticket(
@@ -59,10 +47,31 @@ def create_ticket(
         created_at=now_iso(),
         updated_at=now_iso(),
     )
-    with TICKETS_LOCK:
-        tickets = load_tickets()
-        tickets.insert(0, ticket.model_dump())
-        save_tickets(tickets)
+    with DB_LOCK:
+        with get_connection() as connection:
+            connection.execute(
+                """
+                INSERT INTO tickets (
+                    id, title, message, category, category_label, status, source,
+                    customer_email, note, response, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    ticket.id,
+                    ticket.title,
+                    ticket.message,
+                    ticket.category,
+                    ticket.category_label,
+                    ticket.status,
+                    ticket.source,
+                    ticket.customer_email,
+                    ticket.note,
+                    ticket.response,
+                    ticket.created_at,
+                    ticket.updated_at,
+                ),
+            )
+            connection.commit()
     return ticket
 
 
@@ -74,24 +83,38 @@ def upsert_chat_ticket(
     customer_email: str,
     response: str | None = None,
 ) -> Ticket:
-    with TICKETS_LOCK:
-        tickets = load_tickets()
+    with DB_LOCK:
         if ticket_id:
-            for index, item in enumerate(tickets):
-                if item.get("id") != ticket_id:
-                    continue
-                if (item.get("customer_email") or "").lower() != customer_email.lower():
-                    raise HTTPException(status_code=403, detail="Ticket non autorise")
+            with get_connection() as connection:
+                row = connection.execute(
+                    "SELECT * FROM tickets WHERE id = ?",
+                    (ticket_id,),
+                ).fetchone()
+                if row:
+                    item = dict(row)
+                    if (item.get("customer_email") or "").lower() != customer_email.lower():
+                        raise HTTPException(status_code=403, detail="Ticket non autorise")
 
-                item["title"] = item.get("title") or title
-                item["message"] = message
-                item["category"] = category
-                item["category_label"] = CATEGORY_LABELS.get(category, "ℹ️ Général")
-                item["response"] = response
-                item["updated_at"] = now_iso()
-                tickets[index] = item
-                save_tickets(tickets)
-                return Ticket(**item)
+                    updated_at = now_iso()
+                    connection.execute(
+                        """
+                        UPDATE tickets
+                        SET title = ?, message = ?, category = ?, category_label = ?, response = ?, updated_at = ?
+                        WHERE id = ?
+                        """,
+                        (
+                            item.get("title") or title,
+                            message,
+                            category,
+                            CATEGORY_LABELS.get(category, "ℹ️ Général"),
+                            response,
+                            updated_at,
+                            ticket_id,
+                        ),
+                    )
+                    connection.commit()
+                    refreshed = connection.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+                    return row_to_ticket(refreshed)
 
     return create_ticket(
         title=title,
@@ -104,16 +127,21 @@ def upsert_chat_ticket(
 
 
 def update_ticket(ticket_id: str, status: Optional[str] = None, note: Optional[str] = None) -> Ticket:
-    with TICKETS_LOCK:
-        tickets = load_tickets()
-        for index, item in enumerate(tickets):
-            if item.get("id") == ticket_id:
-                if status:
-                    item["status"] = status
-                if note is not None:
-                    item["note"] = note
-                item["updated_at"] = now_iso()
-                tickets[index] = item
-                save_tickets(tickets)
-                return Ticket(**item)
+    with DB_LOCK:
+        with get_connection() as connection:
+            row = connection.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+            if row:
+                item = dict(row)
+                connection.execute(
+                    "UPDATE tickets SET status = ?, note = ?, updated_at = ? WHERE id = ?",
+                    (
+                        status or item.get("status"),
+                        note if note is not None else item.get("note"),
+                        now_iso(),
+                        ticket_id,
+                    ),
+                )
+                connection.commit()
+                refreshed = connection.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+                return row_to_ticket(refreshed)
     raise HTTPException(status_code=404, detail="Ticket introuvable")

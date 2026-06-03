@@ -5,6 +5,7 @@ Agent de support client de première ligne pour Evollis, leader européen du Dev
 ## Stack technique
 
 - **Backend** : Python + FastAPI
+- **Base locale** : SQLite
 - **LLM** : OpenAI — classification + génération de réponse
 - **Frontend** : React + TypeScript + Vite
 - **Infra** : Docker + Docker Compose (1 container backend interne, 1 container nginx public)
@@ -22,7 +23,7 @@ L'agent classe chaque message entrant dans l'une des 4 catégories suivantes, pu
 
 La classification et la réponse utilisent deux appels LLM séparés via l'API OpenAI pour maximiser la précision et la rapidité.
 
-L'application propose aussi deux vues: une vue utilisateur pour discuter avec l'agent, et une vue admin pour suivre les tickets créés automatiquement à chaque échange. Les tickets sont stockés localement dans `backend/tickets.json`, sans base de données.
+L'application propose aussi deux vues: une vue utilisateur pour discuter avec l'agent, et une vue admin pour suivre les tickets créés automatiquement à chaque échange. Les utilisateurs et tickets sont maintenant persistés dans une base SQLite locale (`backend/data/support.db`).
 
 ## Démarrage rapide
 
@@ -81,7 +82,7 @@ takehome/
 │       ├── schemas.py         # modèles Pydantic
 │       ├── services/
 │       │   ├── llm.py         # classification + génération
-│       │   └── tickets.py     # stockage JSON des tickets
+│       │   └── tickets.py     # stockage SQLite des tickets
 │       └── api/routes/
 │           ├── chat.py        # route /chat
 │           ├── health.py      # route /health

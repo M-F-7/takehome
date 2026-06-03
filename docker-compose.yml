@@ -3,6 +3,8 @@ services:
     build: ./backend
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - backend_data:/app/data
     restart: unless-stopped
 
   frontend:
@@ -19,3 +21,6 @@ services:
       - backend
       - frontend
     restart: unless-stopped
+
+volumes:
+  backend_data:
