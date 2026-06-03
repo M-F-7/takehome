@@ -1,2 +1,10 @@
 .env
 backend/tickets.json
+backend/users.json
+__pycache__/
+*.pyc
+node_modules/
+dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts

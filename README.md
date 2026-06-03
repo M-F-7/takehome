@@ -6,7 +6,7 @@ Agent de support client de première ligne pour Evollis, leader européen du Dev
 
 - **Backend** : Python + FastAPI
 - **LLM** : OpenAI — classification + génération de réponse
-- **Frontend** : HTML/CSS/JS vanilla (zéro dépendance)
+- **Frontend** : React + TypeScript + Vite
 - **Infra** : Docker + Docker Compose (1 container backend interne, 1 container nginx public)
 
 ## Fonctionnement
@@ -52,14 +52,15 @@ docker compose up --build
 cd backend
 pip install -r requirements.txt
 OPENAI_API_KEY=sk-... uvicorn main:app --reload
-# Ouvrir frontend/index.html dans le navigateur
+# Démarrer aussi le frontend React si besoin
+# cd ../frontend && npm install && npm run dev
 ```
 
 ## Architecture
 
 ```
 [Browser] ──→ [nginx:3000]
-                 ├──→ index.html
+                 ├──→ app React buildée
                  └──→ proxy → [FastAPI:8000] (/chat, /tickets, /health, /docs)
                           │
                           ├── OpenAI (classification)
@@ -86,7 +87,8 @@ takehome/
 │           ├── health.py      # route /health
 │           └── tickets.py     # routes /tickets
 ├── frontend/
-│   └── index.html             # SPA utilisateur + admin
+│   ├── src/                   # SPA React + TypeScript
+│   └── Dockerfile             # build frontend
 ├── nginx/
 │   └── default.conf           # reverse proxy Nginx vers le backend
 └── docker-compose.yml         # déploiement local

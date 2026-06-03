@@ -4,27 +4,38 @@ from fastapi import APIRouter
 
 from app.schemas import Ticket, TicketCreate, TicketUpdate
 from app.services.tickets import create_ticket, load_tickets, update_ticket
+from app.services.users import require_existing_user
 
 router = APIRouter()
 
 
 @router.get("/tickets")
-async def list_tickets(limit: int = 50, status: Optional[str] = None, category: Optional[str] = None):
+async def list_tickets(
+    limit: int = 50,
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    customer_email: Optional[str] = None,
+):
     tickets = load_tickets()
     if status:
         tickets = [ticket for ticket in tickets if ticket.get("status") == status]
     if category:
         tickets = [ticket for ticket in tickets if ticket.get("category") == category]
+    if customer_email:
+        normalized_email = customer_email.strip().lower()
+        tickets = [ticket for ticket in tickets if (ticket.get("customer_email") or "").lower() == normalized_email]
     return {"items": tickets[: max(1, min(limit, 200))], "count": len(tickets)}
 
 
 @router.post("/tickets", response_model=Ticket)
 async def add_ticket(body: TicketCreate):
+    customer_email = require_existing_user(body.customer_email)
     return create_ticket(
         title=body.title,
         message=body.message,
         category=body.category,
         source=body.source,
+        customer_email=customer_email,
     )
 
 

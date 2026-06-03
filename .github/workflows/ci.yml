@@ -5,7 +5,46 @@ on:
   pull_request:
 
 jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Typecheck frontend
+        run: npm run typecheck
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Compile backend
+        run: python -m compileall backend
+
   integration:
+    needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -40,7 +79,7 @@ jobs:
           echo "App did not become reachable in time"
           exit 1
 
-      - name: Test app and chat endpoints
+      - name: Test app and auth endpoints
         run: |
           set -euo pipefail
 
@@ -50,10 +89,16 @@ jobs:
           echo "Checking /health"
           curl -fsS http://localhost:3000/health | grep -q '"status"'
 
+          echo "Checking /auth/register"
+          AUTH_RESPONSE="$(curl -fsS -X POST http://localhost:3000/auth/register \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"ci@example.com","password":"secret123"}')"
+          echo "$AUTH_RESPONSE" | grep -q '"email"'
+
           echo "Checking /chat"
           CHAT_RESPONSE="$(curl -fsS -X POST http://localhost:3000/chat \
             -H 'Content-Type: application/json' \
-            -d '{"message":"CI check","history":[]}')"
+            -d '{"message":"CI check","history":[],"customer_email":"ci@example.com"}')"
           echo "$CHAT_RESPONSE" | grep -q '"response"'
 
       - name: Check all containers are running

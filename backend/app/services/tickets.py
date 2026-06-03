@@ -37,7 +37,14 @@ def save_tickets(tickets: list[dict]) -> None:
         json.dump(tickets, handle, ensure_ascii=False, indent=2)
 
 
-def create_ticket(title: str, message: str, category: str, source: str = "user", response: str | None = None) -> Ticket:
+def create_ticket(
+    title: str,
+    message: str,
+    category: str,
+    source: str = "user",
+    response: str | None = None,
+    customer_email: str | None = None,
+    ) -> Ticket:
     ticket = Ticket(
         id=str(uuid4()),
         title=title,
@@ -46,6 +53,7 @@ def create_ticket(title: str, message: str, category: str, source: str = "user",
         category_label=CATEGORY_LABELS.get(category, "ℹ️ Général"),
         status="open",
         source=source,
+        customer_email=customer_email,
         note=None,
         response=response,
         created_at=now_iso(),
@@ -56,6 +64,43 @@ def create_ticket(title: str, message: str, category: str, source: str = "user",
         tickets.insert(0, ticket.model_dump())
         save_tickets(tickets)
     return ticket
+
+
+def upsert_chat_ticket(
+    ticket_id: str | None,
+    title: str,
+    message: str,
+    category: str,
+    customer_email: str,
+    response: str | None = None,
+) -> Ticket:
+    with TICKETS_LOCK:
+        tickets = load_tickets()
+        if ticket_id:
+            for index, item in enumerate(tickets):
+                if item.get("id") != ticket_id:
+                    continue
+                if (item.get("customer_email") or "").lower() != customer_email.lower():
+                    raise HTTPException(status_code=403, detail="Ticket non autorise")
+
+                item["title"] = item.get("title") or title
+                item["message"] = message
+                item["category"] = category
+                item["category_label"] = CATEGORY_LABELS.get(category, "ℹ️ Général")
+                item["response"] = response
+                item["updated_at"] = now_iso()
+                tickets[index] = item
+                save_tickets(tickets)
+                return Ticket(**item)
+
+    return create_ticket(
+        title=title,
+        message=message,
+        category=category,
+        source="chat",
+        response=response,
+        customer_email=customer_email,
+    )
 
 
 def update_ticket(ticket_id: str, status: Optional[str] = None, note: Optional[str] = None) -> Ticket:

@@ -1,98 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evollis — Support Client</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1" />
-</head>
-<body>
-
-<header>
-  <div class="logo">
-    <div class="logo-icon">EV</div>
-    <div>
-      <div class="logo-text">Evollis</div>
-      <div class="logo-sub">Support Client</div>
-    </div>
-  </div>
-  <div class="status-badge">
-    <div class="status-dot"></div>
-    Agent disponible
-  </div>
-  <div class="mode-switch" aria-label="Mode de l'application">
-    <button class="mode-btn active" id="userModeBtn" onclick="switchMode('user')">Mode utilisateur</button>
-    <button class="mode-btn" id="adminModeBtn" onclick="switchMode('admin')">Mode admin</button>
-  </div>
-</header>
-
-<div id="userView" class="page">
-  <div class="user-note">Chaque message envoyé crée aussi un ticket visible dans l’espace admin, sans base de données.</div>
-  <div class="chat-container" id="chatContainer">
-    <div class="welcome" id="welcome">
-      <div class="welcome-icon">🤖</div>
-      <h2>Bonjour, comment puis-je vous aider ?</h2>
-      <p>Je suis l'assistant Evollis. Je peux vous aider sur vos abonnements, vos appareils, vos reprises ou toute question générale.</p>
-      <div class="quick-actions">
-        <button class="quick-btn" onclick="sendQuick('Mon prélèvement mensuel est incorrect')">💳 Prélèvement incorrect</button>
-        <button class="quick-btn" onclick="sendQuick('Mon smartphone est tombé en panne')">🔧 Appareil en panne</button>
-        <button class="quick-btn" onclick="sendQuick('Je veux restituer mon appareil en fin de contrat')">🔄 Restitution d'appareil</button>
-        <button class="quick-btn" onclick="sendQuick('Comment fonctionne la location chez Evollis ?')">ℹ️ Comment ça marche</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="input-area">
-    <div class="input-wrap">
-      <textarea
-        id="userInput"
-        placeholder="Décrivez votre problème ou posez votre question…"
-        rows="1"
-        onkeydown="handleKey(event)"
-        oninput="autoResize(this)"
-      ></textarea>
-      <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Envoyer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
-    </div>
-    <div class="input-hint">Entrée pour envoyer · Shift+Entrée pour nouvelle ligne</div>
-  </div>
-</div>
-
-<div id="adminView" class="page" hidden>
-  <div class="admin-shell">
-    <div class="admin-hero">
-      <div>
-        <h2>Admin tickets</h2>
-        <p>Vue de supervision des tickets créés par les utilisateurs.</p>
-      </div>
-      <div class="ticket-toolbar">
-        <button class="refresh-btn" onclick="loadTickets()">Rafraîchir</button>
-      </div>
-    </div>
-
-    <div class="stats-grid" id="statsGrid">
-      <div class="stat-card"><div class="stat-label">Tickets total</div><div class="stat-value" id="statTotal">0</div></div>
-      <div class="stat-card"><div class="stat-label">Ouverts</div><div class="stat-value" id="statOpen">0</div></div>
-      <div class="stat-card"><div class="stat-label">En cours</div><div class="stat-value" id="statInProgress">0</div></div>
-      <div class="stat-card"><div class="stat-label">Résolus</div><div class="stat-value" id="statResolved">0</div></div>
-    </div>
-
-    <div class="ticket-toolbar">
-      <button class="ticket-filter active" data-filter="all" onclick="setTicketFilter('all')">Tous</button>
-      <button class="ticket-filter" data-filter="open" onclick="setTicketFilter('open')">Open</button>
-      <button class="ticket-filter" data-filter="in_progress" onclick="setTicketFilter('in_progress')">In progress</button>
-      <button class="ticket-filter" data-filter="resolved" onclick="setTicketFilter('resolved')">Resolved</button>
-    </div>
-
-    <div class="ticket-list" id="adminTicketList"></div>
-  </div>
-</div>
-
-<script src="app.js?v=2"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evollis Support Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
