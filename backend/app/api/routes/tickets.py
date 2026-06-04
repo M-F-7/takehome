@@ -4,9 +4,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header
 
-from app.schemas import Ticket, TicketCreate, TicketUpdate
+from app.schemas import Ticket, TicketCreate, TicketMessage, TicketUpdate
 from app.services.admin import require_admin_token
-from app.services.tickets import create_ticket, load_tickets, update_ticket
+from app.services.tickets import create_ticket, get_ticket, get_ticket_messages, load_tickets, update_ticket
 from app.services.users import require_existing_user
 
 router = APIRouter()
@@ -49,3 +49,23 @@ async def add_ticket(body: TicketCreate):
 @router.patch("/tickets/{ticket_id}", response_model=Ticket)
 async def patch_ticket(ticket_id: str, body: TicketUpdate, _: Annotated[str, Depends(require_admin_token)]):
     return update_ticket(ticket_id, status=body.status, note=body.note)
+
+
+@router.get("/tickets/{ticket_id}/messages", response_model=list[TicketMessage])
+async def ticket_messages(
+    ticket_id: str,
+    customer_email: Optional[str] = None,
+    x_admin_token: str | None = Header(default=None),
+):
+    ticket = get_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket introuvable")
+
+    if customer_email:
+        normalized_email = require_existing_user(customer_email)
+        if (ticket.customer_email or "").lower() != normalized_email:
+            raise HTTPException(status_code=403, detail="Ticket non autorise")
+    else:
+        require_admin_token(x_admin_token)
+
+    return [TicketMessage(**message) for message in get_ticket_messages(ticket_id)]

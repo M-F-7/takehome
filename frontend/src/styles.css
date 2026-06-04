@@ -498,6 +498,11 @@ header {
   gap: 12px;
 }
 
+.ticket-card-active {
+  border-color: rgba(107, 224, 203, 0.42);
+  box-shadow: 0 0 0 1px rgba(107, 224, 203, 0.18) inset;
+}
+
 .ticket-card-compact {
   padding: 10px 12px;
 }

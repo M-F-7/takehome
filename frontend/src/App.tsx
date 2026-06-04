@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { adminLogin, changePassword, getOpenAIDiagnostic, listAdminTickets, listMyTickets, login, register, sendChatMessage, updateTicketStatus } from './api';
+import { adminLogin, changePassword, getOpenAIDiagnostic, getTicketMessages, listAdminTickets, listMyTickets, login, register, sendChatMessage, updateTicketStatus } from './api';
 import type { AuthMode, ChatHistoryItem, ChatMessage, Mode, Ticket, TicketStatus, UserProfile } from './types';
 
 const FAQ_ITEMS = [
@@ -171,6 +171,8 @@ function TicketsSummary(props: {
   onToggleExpanded: () => void;
   onRefresh: () => void;
   onNewRequest: () => void;
+  onResumeTicket: (ticket: Ticket) => void;
+  activeTicketId: string | null;
 }) {
   const visibleTickets = props.expanded ? props.tickets : props.tickets.slice(0, 2);
 
@@ -198,7 +200,19 @@ function TicketsSummary(props: {
       <div className="ticket-list compact">
         {!props.tickets.length && <div className="empty-state">Aucune demande enregistree pour le moment.</div>}
         {visibleTickets.map((ticket) => (
-          <article key={ticket.id} className={`ticket-card ${props.expanded ? '' : 'ticket-card-compact'}`.trim()}>
+          <article
+            key={ticket.id}
+            className={`ticket-card ${props.expanded ? '' : 'ticket-card-compact'} ${props.activeTicketId === ticket.id ? 'ticket-card-active' : ''}`.trim()}
+            role="button"
+            tabIndex={0}
+            onClick={() => props.onResumeTicket(ticket)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                props.onResumeTicket(ticket);
+              }
+            }}
+          >
             <div className="ticket-title">{ticket.title || 'Ticket sans titre'}</div>
             <div className="ticket-message">{props.expanded ? ticket.message : truncateText(ticket.message, 110)}</div>
             <div className="ticket-meta">
@@ -525,6 +539,29 @@ export default function App() {
     }
   }
 
+  async function handleResumeTicket(ticket: Ticket) {
+    if (!user) return;
+    try {
+      const ticketMessages = await getTicketMessages(ticket.id, user.email);
+      setCurrentTicketId(ticket.id);
+      setMessages(
+        ticketMessages.map((message) => ({
+          role: message.role === 'assistant' ? 'agent' : 'user',
+          content: message.content,
+        })),
+      );
+      setHistory(
+        ticketMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+      );
+      setAppFeedback(`Demande reprise: ${ticket.title || 'Ticket sans titre'}`);
+    } catch (err) {
+      setAppFeedback(err instanceof Error ? err.message : 'Impossible de rouvrir cette demande.');
+    }
+  }
+
   async function handleAdminLogin() {
     try {
       setAdminAuthPending(true);
@@ -823,6 +860,8 @@ export default function App() {
               onToggleExpanded={() => setMyTicketsExpanded((prev) => !prev)}
               onRefresh={() => void refreshMyTickets()}
               onNewRequest={resetConversation}
+              onResumeTicket={(ticket) => void handleResumeTicket(ticket)}
+              activeTicketId={currentTicketId}
             />
             <FaqPanel open={faqOpen} onClose={() => setFaqOpen(false)} />
             <ChatPanel

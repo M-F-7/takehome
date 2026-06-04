@@ -1,4 +1,4 @@
-import type { AdminSession, ChatHistoryItem, ChatResponse, OpenAIDiagnostic, Ticket, TicketsResponse, TicketStatus, UserProfile } from './types';
+import type { AdminSession, ChatHistoryItem, ChatResponse, OpenAIDiagnostic, Ticket, TicketMessage, TicketsResponse, TicketStatus, UserProfile } from './types';
 
 const API_BASE = '';
 
@@ -77,6 +77,11 @@ export function sendChatMessage(payload: {
 export function listMyTickets(email: string, limit = 50) {
   const query = new URLSearchParams({ limit: String(limit), customer_email: email });
   return request<TicketsResponse>(`/tickets?${query.toString()}`);
+}
+
+export function getTicketMessages(ticketId: string, customerEmail: string) {
+  const query = new URLSearchParams({ customer_email: customerEmail });
+  return request<TicketMessage[]>(`/tickets/${ticketId}/messages?${query.toString()}`);
 }
 
 export function listAdminTickets(adminToken: string, limit = 100) {

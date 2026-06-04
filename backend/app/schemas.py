@@ -9,6 +9,11 @@ class ChatMessage(BaseModel):
     ticket_id: Optional[str] = None
 
 
+class TicketMessage(BaseModel):
+    role: str
+    content: str
+
+
 class ChatResponse(BaseModel):
     response: str
     category: str

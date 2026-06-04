@@ -17,6 +17,11 @@ export interface ChatHistoryItem {
   content: string;
 }
 
+export interface TicketMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface ChatResponse {
   response: string;
   category: Category;
