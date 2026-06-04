@@ -61,3 +61,12 @@ class PasswordChange(BaseModel):
     email: str
     current_password: str
     new_password: str
+
+
+class AdminCredentials(BaseModel):
+    email: str
+    password: str
+
+
+class AdminSession(BaseModel):
+    token: str

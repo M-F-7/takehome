@@ -8,6 +8,10 @@ export interface UserProfile {
   created_at: string;
 }
 
+export interface AdminSession {
+  token: string;
+}
+
 export interface ChatHistoryItem {
   role: 'user' | 'assistant';
   content: string;

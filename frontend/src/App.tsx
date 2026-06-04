@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { changePassword, getOpenAIDiagnostic, listAdminTickets, listMyTickets, login, register, sendChatMessage, updateTicketStatus } from './api';
+import { adminLogin, changePassword, getOpenAIDiagnostic, listAdminTickets, listMyTickets, login, register, sendChatMessage, updateTicketStatus } from './api';
 import type { AuthMode, ChatHistoryItem, ChatMessage, Mode, Ticket, TicketStatus, UserProfile } from './types';
 
 const FAQ_ITEMS = [
@@ -32,6 +32,26 @@ function loadStoredUser(): UserProfile | null {
 
 function saveStoredUser(user: UserProfile | null) {
   void user;
+}
+
+function loadAdminToken(): string | null {
+  try {
+    return sessionStorage.getItem('evollis_admin_token');
+  } catch {
+    return null;
+  }
+}
+
+function saveAdminToken(token: string | null) {
+  try {
+    if (token) {
+      sessionStorage.setItem('evollis_admin_token', token);
+    } else {
+      sessionStorage.removeItem('evollis_admin_token');
+    }
+  } catch {
+    // no-op
+  }
 }
 
 function BrandLockup(props: { compact?: boolean }) {
@@ -395,6 +415,35 @@ function AdminView(props: {
   );
 }
 
+function AdminLoginPanel(props: {
+  email: string;
+  password: string;
+  feedback: string;
+  pending: boolean;
+  onEmailChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="admin-login-overlay">
+      <div className="auth-panel auth-gate admin-login-panel">
+        <div className="panel-title">Acces admin</div>
+        <div className="panel-subtitle">Connectez-vous avec les identifiants admin configures dans le fichier d environnement.</div>
+        <div className="auth-actions">
+          <input value={props.email} onChange={(event) => props.onEmailChange(event.target.value)} type="email" placeholder="Email admin" />
+          <input value={props.password} onChange={(event) => props.onPasswordChange(event.target.value)} type="password" placeholder="Mot de passe admin" />
+          <button className="mode-btn active" type="button" onClick={props.onSubmit} disabled={props.pending}>
+            {props.pending ? 'Connexion...' : 'Acceder a l admin'}
+          </button>
+          <button className="mode-btn" type="button" onClick={props.onCancel} disabled={props.pending}>Retour</button>
+        </div>
+        {props.feedback && <div className="auth-feedback error">{props.feedback}</div>}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(() => loadStoredUser());
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
@@ -403,6 +452,12 @@ export default function App() {
   const [authFeedback, setAuthFeedback] = useState('');
   const [authPending, setAuthPending] = useState(false);
   const [mode, setMode] = useState<Mode>('user');
+  const [adminToken, setAdminToken] = useState<string | null>(() => loadAdminToken());
+  const [adminLoginOpen, setAdminLoginOpen] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminAuthFeedback, setAdminAuthFeedback] = useState('');
+  const [adminAuthPending, setAdminAuthPending] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -421,16 +476,16 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     void refreshMyTickets();
-    if (mode === 'admin') {
+    if (mode === 'admin' && adminToken) {
       void refreshAdminTickets();
     }
-  }, [user]);
+  }, [user, mode, adminToken]);
 
   useEffect(() => {
-    if (mode === 'admin' && user) {
+    if (mode === 'admin' && user && adminToken) {
       void refreshAdminTickets();
     }
-  }, [mode, user]);
+  }, [mode, user, adminToken]);
 
   useEffect(() => {
     const chatContainer = document.querySelector('.chat-container');
@@ -455,11 +510,30 @@ export default function App() {
   }
 
   async function refreshAdminTickets() {
+    if (!adminToken) return;
     try {
-      const data = await listAdminTickets();
+      const data = await listAdminTickets(adminToken);
       setAdminTickets(data.items);
     } catch {
       setAdminTickets([]);
+    }
+  }
+
+  async function handleAdminLogin() {
+    try {
+      setAdminAuthPending(true);
+      setAdminAuthFeedback('');
+      const session = await adminLogin(adminEmail.trim(), adminPassword);
+      setAdminToken(session.token);
+      saveAdminToken(session.token);
+      setAdminLoginOpen(false);
+      setMode('admin');
+      setAdminPassword('');
+      await refreshAdminTickets();
+    } catch (err) {
+      setAdminAuthFeedback(err instanceof Error ? err.message : 'Connexion admin impossible.');
+    } finally {
+      setAdminAuthPending(false);
     }
   }
 
@@ -530,9 +604,15 @@ export default function App() {
 
   function handleLogout() {
     saveStoredUser(null);
+    saveAdminToken(null);
     setUser(null);
     setAuthMode(null);
     setAuthPassword('');
+    setAdminToken(null);
+    setAdminLoginOpen(false);
+    setAdminEmail('');
+    setAdminPassword('');
+    setAdminAuthFeedback('');
     setProfileOpen(false);
     setCurrentPassword('');
     setNewPassword('');
@@ -612,15 +692,16 @@ export default function App() {
   }
 
   async function handleUpdateStatus(ticketId: string, status: TicketStatus) {
-    await updateTicketStatus(ticketId, status);
+    if (!adminToken) return;
+    await updateTicketStatus(ticketId, status, adminToken);
     await refreshAdminTickets();
     await refreshMyTickets();
   }
 
   async function handlePingAgent() {
-    if (!user) return;
+    if (!user || !adminToken) return;
     try {
-      const diagnostic = await getOpenAIDiagnostic();
+      const diagnostic = await getOpenAIDiagnostic(adminToken);
       if (diagnostic.model_call_ok) {
         setAdminAgentCheckResult('Agent disponible via OpenAI.');
         return;
@@ -682,11 +763,39 @@ export default function App() {
           <button className={`mode-btn ${mode === 'user' ? 'active' : ''}`.trim()} type="button" onClick={() => setMode('user')}>
             Mode utilisateur
           </button>
-          <button className={`mode-btn ${mode === 'admin' ? 'active' : ''}`.trim()} type="button" onClick={() => setMode('admin')}>
+          <button
+            className={`mode-btn ${mode === 'admin' ? 'active' : ''}`.trim()}
+            type="button"
+            onClick={() => {
+              if (!adminToken) {
+                setAdminLoginOpen(true);
+                setAdminAuthFeedback('');
+                return;
+              }
+              setMode('admin');
+            }}
+          >
             Mode admin
           </button>
         </div>
       </header>
+
+      {adminLoginOpen && (
+        <AdminLoginPanel
+          email={adminEmail}
+          password={adminPassword}
+          feedback={adminAuthFeedback}
+          pending={adminAuthPending}
+          onEmailChange={setAdminEmail}
+          onPasswordChange={setAdminPassword}
+          onSubmit={() => void handleAdminLogin()}
+          onCancel={() => {
+            setAdminLoginOpen(false);
+            setAdminAuthFeedback('');
+            setAdminPassword('');
+          }}
+        />
+      )}
 
       {mode === 'user' ? (
         <div className="page">

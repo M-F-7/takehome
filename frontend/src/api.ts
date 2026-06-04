@@ -1,4 +1,4 @@
-import type { ChatHistoryItem, ChatResponse, OpenAIDiagnostic, Ticket, TicketsResponse, TicketStatus, UserProfile } from './types';
+import type { AdminSession, ChatHistoryItem, ChatResponse, OpenAIDiagnostic, Ticket, TicketsResponse, TicketStatus, UserProfile } from './types';
 
 const API_BASE = '';
 
@@ -48,6 +48,14 @@ export function changePassword(email: string, currentPassword: string, newPasswo
   });
 }
 
+export function adminLogin(email: string, password: string) {
+  return request<AdminSession>('/auth/admin-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
 export function sendChatMessage(payload: {
   message: string;
   history: ChatHistoryItem[];
@@ -71,18 +79,22 @@ export function listMyTickets(email: string, limit = 50) {
   return request<TicketsResponse>(`/tickets?${query.toString()}`);
 }
 
-export function listAdminTickets(limit = 100) {
-  return request<TicketsResponse>(`/tickets?limit=${limit}`);
+export function listAdminTickets(adminToken: string, limit = 100) {
+  return request<TicketsResponse>(`/tickets?limit=${limit}`, {
+    headers: { 'X-Admin-Token': adminToken },
+  });
 }
 
-export function updateTicketStatus(ticketId: string, status: TicketStatus) {
+export function updateTicketStatus(ticketId: string, status: TicketStatus, adminToken: string) {
   return request<Ticket>(`/tickets/${ticketId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
     body: JSON.stringify({ status }),
   });
 }
 
-export function getOpenAIDiagnostic() {
-  return request<OpenAIDiagnostic>('/health/openai');
+export function getOpenAIDiagnostic(adminToken: string) {
+  return request<OpenAIDiagnostic>('/health/openai', {
+    headers: { 'X-Admin-Token': adminToken },
+  });
 }

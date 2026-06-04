@@ -74,7 +74,6 @@ Tu peux reprendre ce que je t' ai di
 TODO:
 
 syteme de context (a finir)
-modif un peu l' UI
 register en admin
 en admin pouvoir filtrer les différents types de tickets
 voir si le user peut changer de demandes facilement 

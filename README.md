@@ -100,6 +100,8 @@ takehome/
 | Variable | Description |
 |----------|-------------|
 | `OPENAI_API_KEY` | Clé API OpenAI (obligatoire pour les réponses LLM, fallback local si indisponible) |
+| `ADMIN_EMAIL` | Email requis pour accéder à la vue admin |
+| `ADMIN_PASSWORD` | Mot de passe requis pour accéder à la vue admin |
 
 ---
 

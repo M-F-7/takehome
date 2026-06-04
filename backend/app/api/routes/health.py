@@ -1,5 +1,8 @@
-from fastapi import APIRouter
+from typing import Annotated
 
+from fastapi import APIRouter, Depends
+
+from app.services.admin import require_admin_token
 from app.services.llm import check_openai_status, is_openai_configured
 
 router = APIRouter()
@@ -15,7 +18,7 @@ async def health():
 
 
 @router.get("/health/openai")
-async def openai_health():
+async def openai_health(_: Annotated[str, Depends(require_admin_token)]):
     status = check_openai_status()
     return {
         "status": "ok" if status.get("model_call_ok") else "degraded",

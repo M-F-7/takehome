@@ -61,6 +61,8 @@ jobs:
         run: |
           cat > .env <<'EOF'
           OPENAI_API_KEY=dummy-ci-key
+          ADMIN_EMAIL=admin@example.com
+          ADMIN_PASSWORD=secret123
           EOF
 
       - name: Build and start containers via make
