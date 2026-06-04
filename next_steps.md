@@ -7,7 +7,7 @@ secure nginx avec https sur la partie externe, avoir du rate limiting et load ba
 avoir une base de monitoring avec prometheus (avec de l' alerting system, des healthchecks, et des requetes sur quelques métriques métiers) et grafana pour des dashboard de ces métrique et un monitoring plus simple dans l' ensemble 
 
 
-
+ajouter un feedback une fois la demande terminé pour voir si l' ux est bien et si il y a des choses a améliorer
 
 Pour contrer une limite de tokens, il faut surtout réduire ce que tu envoies au modèle.
 Le plus utile pour ton projet :
@@ -75,7 +75,6 @@ TODO:
 
 syteme de context (a finir)
 modif un peu l' UI
-    - ptit logo au debut machin homepage, ui global (couleurs, polices etc)
 register en admin
 en admin pouvoir filtrer les différents types de tickets
 voir si le user peut changer de demandes facilement 
