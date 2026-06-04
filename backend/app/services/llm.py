@@ -3,14 +3,30 @@ import re
 
 import openai
 
-from app.core.config import OPENAI_API_KEY
+from app.core.config import GROQ_API_BASE, GROQ_API_KEY, GROQ_MODEL, LLM_PROVIDER, OPENAI_API_KEY, OPENAI_MODEL
 from app.core.prompts import CLASSIFICATION_PROMPT, EVOLLIS_CONTEXT, RESPONSE_TEMPLATES
 
-openai.api_key = OPENAI_API_KEY
+
+def get_llm_provider() -> str:
+    provider = (LLM_PROVIDER or "openai").strip().lower()
+    return provider if provider in {"openai", "groq"} else "openai"
+
+
+def configure_openai_client() -> tuple[str, str]:
+    provider = get_llm_provider()
+    if provider == "groq":
+        openai.api_key = GROQ_API_KEY
+        openai.api_base = GROQ_API_BASE
+        return provider, GROQ_MODEL
+
+    openai.api_key = OPENAI_API_KEY
+    openai.api_base = "https://api.openai.com/v1"
+    return provider, OPENAI_MODEL
 
 
 def is_openai_configured() -> bool:
-    key = (OPENAI_API_KEY or "").strip()
+    provider = get_llm_provider()
+    key = ((GROQ_API_KEY if provider == "groq" else OPENAI_API_KEY) or "").strip()
     if not key:
         return False
     if key.lower().startswith("dummy"):
@@ -20,16 +36,19 @@ def is_openai_configured() -> bool:
 
 def check_openai_status() -> dict:
     if not is_openai_configured():
+        provider = get_llm_provider()
         return {
             "configured": False,
             "reachable": False,
             "model_call_ok": False,
-            "error": "OPENAI_API_KEY absente, vide ou valeur de test invalide.",
+            "provider": provider,
+            "error": f"Cle API absente, vide ou invalide pour le provider {provider}.",
         }
 
     try:
+        provider, model = configure_openai_client()
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model=model,
             messages=[
                 {"role": "system", "content": "Reply with OK only."},
                 {"role": "user", "content": "ping"},
@@ -42,14 +61,17 @@ def check_openai_status() -> dict:
             "configured": True,
             "reachable": True,
             "model_call_ok": True,
+            "provider": provider,
             "error": None,
             "sample": content,
         }
     except Exception as exc:
+        provider = get_llm_provider()
         return {
             "configured": True,
             "reachable": False,
             "model_call_ok": False,
+            "provider": provider,
             "error": str(exc),
         }
 
@@ -286,8 +308,9 @@ def fallback_response(category: str, message: str, history: list[dict], ticket: 
 
 def classify_message(message: str) -> tuple[str, float, str]:
     try:
+        _, model = configure_openai_client()
         classification_resp = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model=model,
             messages=[
                 {"role": "system", "content": CLASSIFICATION_PROMPT},
                 {"role": "user", "content": message},
@@ -343,8 +366,9 @@ def generate_response(category: str, message: str, history: list[dict], ticket: 
     messages.append({"role": "user", "content": message})
 
     try:
+        _, model = configure_openai_client()
         resp = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model=model,
             messages=messages,
             max_tokens=400,
             temperature=0.45,

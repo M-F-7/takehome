@@ -59,6 +59,7 @@ export interface OpenAIDiagnostic {
   configured: boolean;
   reachable: boolean;
   model_call_ok: boolean;
+  provider: string;
   error: string | null;
   sample?: string;
 }

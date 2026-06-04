@@ -34,26 +34,6 @@ function saveStoredUser(user: UserProfile | null) {
   void user;
 }
 
-function loadAdminToken(): string | null {
-  try {
-    return sessionStorage.getItem('evollis_admin_token');
-  } catch {
-    return null;
-  }
-}
-
-function saveAdminToken(token: string | null) {
-  try {
-    if (token) {
-      sessionStorage.setItem('evollis_admin_token', token);
-    } else {
-      sessionStorage.removeItem('evollis_admin_token');
-    }
-  } catch {
-    // no-op
-  }
-}
-
 function BrandLockup(props: { compact?: boolean }) {
   return (
     <div className={`brand-lockup ${props.compact ? 'compact' : ''}`.trim()}>
@@ -478,7 +458,7 @@ export default function App() {
   const [authFeedback, setAuthFeedback] = useState('');
   const [authPending, setAuthPending] = useState(false);
   const [mode, setMode] = useState<Mode>('user');
-  const [adminToken, setAdminToken] = useState<string | null>(() => loadAdminToken());
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [adminLoginOpen, setAdminLoginOpen] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -551,7 +531,6 @@ export default function App() {
       setAdminAuthFeedback('');
       const session = await adminLogin(adminEmail.trim(), adminPassword);
       setAdminToken(session.token);
-      saveAdminToken(session.token);
       setAdminLoginOpen(false);
       setMode('admin');
       setAdminPassword('');
@@ -630,7 +609,6 @@ export default function App() {
 
   function handleLogout() {
     saveStoredUser(null);
-    saveAdminToken(null);
     setUser(null);
     setAuthMode(null);
     setAuthPassword('');
@@ -728,16 +706,17 @@ export default function App() {
     if (!user || !adminToken) return;
     try {
       const diagnostic = await getOpenAIDiagnostic(adminToken);
+      const providerLabel = (diagnostic.provider || 'llm').toUpperCase();
       if (diagnostic.model_call_ok) {
-        setAdminAgentCheckResult('Agent disponible via OpenAI.');
+        setAdminAgentCheckResult(`Agent disponible via ${providerLabel}.`);
         return;
       }
 
       const details = diagnostic.error ? ` Détail: ${diagnostic.error}` : '';
       setAdminAgentCheckResult(
         diagnostic.configured
-          ? `Agent joignable, mais OpenAI ne repond pas correctement.${details}`
-          : `OpenAI n'est pas configure correctement.${details}`
+          ? `Agent joignable, mais ${providerLabel} ne repond pas correctement.${details}`
+          : `${providerLabel} n'est pas configure correctement.${details}`
       );
     } catch (err) {
       const details = err instanceof Error ? ` Détail: ${err.message}` : '';

@@ -100,6 +100,11 @@ takehome/
 | Variable | Description |
 |----------|-------------|
 | `OPENAI_API_KEY` | Clé API OpenAI (obligatoire pour les réponses LLM, fallback local si indisponible) |
+| `GROQ_API_KEY` | Clé API Groq si vous utilisez ce provider |
+| `LLM_PROVIDER` | Provider actif : `openai` ou `groq` |
+| `OPENAI_MODEL` | Modèle OpenAI utilisé |
+| `GROQ_MODEL` | Modèle Groq utilisé |
+| `GROQ_API_BASE` | Base URL Groq, par défaut `https://api.groq.com/openai/v1` |
 | `ADMIN_EMAIL` | Email requis pour accéder à la vue admin |
 | `ADMIN_PASSWORD` | Mot de passe requis pour accéder à la vue admin |
 

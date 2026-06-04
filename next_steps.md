@@ -7,6 +7,8 @@ secure nginx avec https sur la partie externe, avoir du rate limiting et load ba
 avoir une base de monitoring avec prometheus (avec de l' alerting system, des healthchecks, et des requetes sur quelques métriques métiers) et grafana pour des dashboard de ces métrique et un monitoring plus simple dans l' ensemble 
 
 
+Rate limiting de prompt
+
 ajouter un feedback une fois la demande terminé pour voir si l' ux est bien et si il y a des choses a améliorer
 
 Pour contrer une limite de tokens, il faut surtout réduire ce que tu envoies au modèle.
