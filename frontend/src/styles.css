@@ -450,6 +450,42 @@ header {
   gap: 12px;
 }
 
+.filters-row {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-right: 4px;
+}
+
+.ticket-filter {
+  border: 1px solid var(--border);
+  background: rgba(18, 36, 50, 0.92);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+.ticket-filter.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  border-color: transparent;
+  color: #05212d;
+}
+
 .ticket-list.compact {
   max-height: 180px;
   overflow-y: auto;

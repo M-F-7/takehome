@@ -364,9 +364,18 @@ function AdminView(props: {
   onPingAgent: () => void;
   agentCheckResult: string;
 }) {
-  const openCount = props.tickets.filter((ticket) => ticket.status === 'open').length;
-  const progressCount = props.tickets.filter((ticket) => ticket.status === 'in_progress').length;
-  const resolvedCount = props.tickets.filter((ticket) => ticket.status === 'resolved').length;
+  const [statusFilter, setStatusFilter] = useState<'all' | TicketStatus>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | Ticket['category']>('all');
+
+  const filteredTickets = props.tickets.filter((ticket) => {
+    const statusMatches = statusFilter === 'all' || ticket.status === statusFilter;
+    const categoryMatches = categoryFilter === 'all' || ticket.category === categoryFilter;
+    return statusMatches && categoryMatches;
+  });
+
+  const openCount = filteredTickets.filter((ticket) => ticket.status === 'open').length;
+  const progressCount = filteredTickets.filter((ticket) => ticket.status === 'in_progress').length;
+  const resolvedCount = filteredTickets.filter((ticket) => ticket.status === 'resolved').length;
 
   return (
     <div className="admin-shell">
@@ -382,14 +391,31 @@ function AdminView(props: {
       </div>
       {props.agentCheckResult && <div className="app-feedback error">{props.agentCheckResult}</div>}
       <div className="stats-grid">
-        <div className="stat-card"><div className="stat-label">Tickets total</div><div className="stat-value">{props.tickets.length}</div></div>
+        <div className="stat-card"><div className="stat-label">Tickets visibles</div><div className="stat-value">{filteredTickets.length}</div></div>
         <div className="stat-card"><div className="stat-label">Ouverts</div><div className="stat-value">{openCount}</div></div>
         <div className="stat-card"><div className="stat-label">En cours</div><div className="stat-value">{progressCount}</div></div>
         <div className="stat-card"><div className="stat-label">Resolus</div><div className="stat-value">{resolvedCount}</div></div>
       </div>
+      <div className="ticket-toolbar filters-row">
+        <div className="filter-group">
+          <span className="filter-label">Statut</span>
+          <button className={`ticket-filter ${statusFilter === 'all' ? 'active' : ''}`.trim()} type="button" onClick={() => setStatusFilter('all')}>Tous</button>
+          <button className={`ticket-filter ${statusFilter === 'open' ? 'active' : ''}`.trim()} type="button" onClick={() => setStatusFilter('open')}>Ouverts</button>
+          <button className={`ticket-filter ${statusFilter === 'in_progress' ? 'active' : ''}`.trim()} type="button" onClick={() => setStatusFilter('in_progress')}>En cours</button>
+          <button className={`ticket-filter ${statusFilter === 'resolved' ? 'active' : ''}`.trim()} type="button" onClick={() => setStatusFilter('resolved')}>Resolus</button>
+        </div>
+        <div className="filter-group">
+          <span className="filter-label">Categorie</span>
+          <button className={`ticket-filter ${categoryFilter === 'all' ? 'active' : ''}`.trim()} type="button" onClick={() => setCategoryFilter('all')}>Toutes</button>
+          <button className={`ticket-filter ${categoryFilter === 'BILLING' ? 'active' : ''}`.trim()} type="button" onClick={() => setCategoryFilter('BILLING')}>Facturation</button>
+          <button className={`ticket-filter ${categoryFilter === 'TECHNICAL' ? 'active' : ''}`.trim()} type="button" onClick={() => setCategoryFilter('TECHNICAL')}>Technique</button>
+          <button className={`ticket-filter ${categoryFilter === 'TRADEIN' ? 'active' : ''}`.trim()} type="button" onClick={() => setCategoryFilter('TRADEIN')}>Trade-in</button>
+          <button className={`ticket-filter ${categoryFilter === 'GENERAL' ? 'active' : ''}`.trim()} type="button" onClick={() => setCategoryFilter('GENERAL')}>General</button>
+        </div>
+      </div>
       <div className="ticket-list">
-        {!props.tickets.length && <div className="empty-state">Aucun ticket a afficher.</div>}
-        {props.tickets.map((ticket) => (
+        {!filteredTickets.length && <div className="empty-state">Aucun ticket a afficher pour ces filtres.</div>}
+        {filteredTickets.map((ticket) => (
           <article key={ticket.id} className="ticket-card">
             <div className="ticket-top">
               <div>

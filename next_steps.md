@@ -74,7 +74,6 @@ Tu peux reprendre ce que je t' ai di
 TODO:
 
 syteme de context (a finir)
-register en admin
 en admin pouvoir filtrer les différents types de tickets
 voir si le user peut changer de demandes facilement 
 verif que l' on repond bien a la solution metier en terme de classification et autre
