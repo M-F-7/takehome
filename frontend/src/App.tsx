@@ -147,9 +147,7 @@ function ProfilePanel(props: {
 function TicketsSummary(props: {
   tickets: Ticket[];
   expanded: boolean;
-  profileOpen: boolean;
   onToggleExpanded: () => void;
-  onToggleProfile: () => void;
   onRefresh: () => void;
   onNewRequest: () => void;
 }) {
@@ -167,9 +165,6 @@ function TicketsSummary(props: {
           </p>
         </div>
         <div className="profile-actions compact">
-          <button className="mode-btn" type="button" onClick={props.onToggleProfile}>
-            {props.profileOpen ? 'Fermer profil' : 'Profil'}
-          </button>
           {props.tickets.length > 2 && (
             <button className="mode-btn" type="button" onClick={props.onToggleExpanded}>
               {props.expanded ? 'Voir moins' : 'Voir tout'}
@@ -327,8 +322,6 @@ function AdminView(props: {
   onUpdateStatus: (ticketId: string, status: TicketStatus) => void;
   onPingAgent: () => void;
   agentCheckResult: string;
-  faqOpen: boolean;
-  onToggleFaq: () => void;
 }) {
   const openCount = props.tickets.filter((ticket) => ticket.status === 'open').length;
   const progressCount = props.tickets.filter((ticket) => ticket.status === 'in_progress').length;
@@ -344,9 +337,6 @@ function AdminView(props: {
         <div className="ticket-toolbar">
           <button className="refresh-btn" type="button" onClick={props.onRefresh}>Rafraichir</button>
           <button className="refresh-btn" type="button" onClick={props.onPingAgent}>Tester l agent</button>
-          <button className="refresh-btn" type="button" onClick={props.onToggleFaq}>
-            {props.faqOpen ? 'Masquer la FAQ' : 'Voir la FAQ'}
-          </button>
         </div>
       </div>
       {props.agentCheckResult && <div className="app-feedback error">{props.agentCheckResult}</div>}
@@ -699,9 +689,7 @@ export default function App() {
             <TicketsSummary
               tickets={myVisibleTickets.length === myTickets.length ? myTickets : myTickets}
               expanded={myTicketsExpanded}
-              profileOpen={profileOpen}
               onToggleExpanded={() => setMyTicketsExpanded((prev) => !prev)}
-              onToggleProfile={() => setProfileOpen((prev) => !prev)}
               onRefresh={() => void refreshMyTickets()}
               onNewRequest={resetConversation}
             />
@@ -726,8 +714,6 @@ export default function App() {
             onUpdateStatus={(id, status) => void handleUpdateStatus(id, status)}
             onPingAgent={() => void handlePingAgent()}
             agentCheckResult={adminAgentCheckResult}
-            faqOpen={faqOpen}
-            onToggleFaq={() => setFaqOpen((prev) => !prev)}
           />
           <FaqPanel open={faqOpen} onClose={() => setFaqOpen(false)} />
         </div>
