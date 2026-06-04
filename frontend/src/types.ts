@@ -19,6 +19,8 @@ export interface ChatResponse {
   category_label: string;
   confidence: number;
   ticket_id: string | null;
+  llm_mode: 'openai' | 'fallback' | 'clarification';
+  needs_faq: boolean;
 }
 
 export interface Ticket {
@@ -46,4 +48,13 @@ export interface ChatMessage {
   content: string;
   category?: Category | null;
   categoryLabel?: string | null;
+}
+
+export interface OpenAIDiagnostic {
+  status: 'ok' | 'degraded';
+  configured: boolean;
+  reachable: boolean;
+  model_call_ok: boolean;
+  error: string | null;
+  sample?: string;
 }

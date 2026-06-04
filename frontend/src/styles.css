@@ -65,6 +65,7 @@ textarea {
 
 .auth-panel,
 .my-tickets-panel,
+.faq-panel,
 .profile-panel,
 .admin-hero,
 .stat-card,
@@ -248,6 +249,7 @@ header {
 
 .profile-panel,
 .my-tickets-panel,
+.faq-panel,
 .user-note,
 .app-feedback {
   margin: 16px 24px 0;
@@ -279,6 +281,38 @@ header {
 
 .my-tickets-panel {
   padding: 16px;
+}
+
+.faq-panel {
+  position: fixed;
+  right: 24px;
+  top: 88px;
+  width: min(420px, calc(100vw - 48px));
+  max-height: calc(100vh - 112px);
+  padding: 16px;
+  overflow: auto;
+  z-index: 30;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.faq-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.faq-list {
+  display: grid;
+  gap: 12px;
+}
+
+.faq-item {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
 }
 
 .my-tickets-header {
@@ -382,6 +416,30 @@ header {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.chat-help-bar {
+  position: relative;
+  margin: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.help-btn {
+  min-width: 82px;
+}
+
+.help-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(380px, calc(100vw - 48px));
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+  z-index: 15;
 }
 
 .welcome {
@@ -633,6 +691,19 @@ textarea {
   .app-feedback {
     margin-left: 16px;
     margin-right: 16px;
+  }
+
+  .chat-help-bar {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .faq-panel {
+    right: 16px;
+    left: 16px;
+    top: 16px;
+    width: auto;
+    max-height: calc(100vh - 32px);
   }
 
   .stats-grid {

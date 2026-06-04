@@ -9,6 +9,72 @@ from app.core.prompts import CLASSIFICATION_PROMPT, EVOLLIS_CONTEXT, RESPONSE_TE
 openai.api_key = OPENAI_API_KEY
 
 
+def is_openai_configured() -> bool:
+    key = (OPENAI_API_KEY or "").strip()
+    if not key:
+        return False
+    if key.lower().startswith("dummy"):
+        return False
+    return True
+
+
+def check_openai_status() -> dict:
+    if not is_openai_configured():
+        return {
+            "configured": False,
+            "reachable": False,
+            "model_call_ok": False,
+            "error": "OPENAI_API_KEY absente, vide ou valeur de test invalide.",
+        }
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Reply with OK only."},
+                {"role": "user", "content": "ping"},
+            ],
+            max_tokens=5,
+            temperature=0.0,
+        )
+        content = response["choices"][0]["message"]["content"]
+        return {
+            "configured": True,
+            "reachable": True,
+            "model_call_ok": True,
+            "error": None,
+            "sample": content,
+        }
+    except Exception as exc:
+        return {
+            "configured": True,
+            "reachable": False,
+            "model_call_ok": False,
+            "error": str(exc),
+        }
+
+
+def is_uninterpretable_message(message: str) -> bool:
+    normalized = message.strip().lower()
+    if len(normalized) < 2:
+        return True
+    if not re.search(r"[a-zA-Z0-9éèêëàâîïôöùûüç]", normalized):
+        return True
+    cleaned = re.sub(r"[^a-zA-Z0-9éèêëàâîïôöùûüç]", "", normalized)
+    if len(cleaned) < 2:
+        return True
+    if re.fullmatch(r"(.)\1{3,}", cleaned):
+        return True
+    return False
+
+
+def clarification_response() -> str:
+    return (
+        "Je n'ai pas compris votre demande. Pouvez-vous la reformuler en indiquant s'il s'agit plutot de facturation, d'un probleme technique, d'une reprise d'appareil ou d'une question generale ? "
+        "Si besoin, vous pouvez aussi consulter la FAQ Evollis."
+    )
+
+
 def classify_locally(message: str) -> tuple[str, float]:
     normalized = message.lower()
 
@@ -218,7 +284,7 @@ def fallback_response(category: str, message: str, history: list[dict], ticket: 
     )
 
 
-def classify_message(message: str) -> tuple[str, float]:
+def classify_message(message: str) -> tuple[str, float, str]:
     try:
         classification_resp = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -233,9 +299,10 @@ def classify_message(message: str) -> tuple[str, float]:
         classification = json.loads(classification_text)
         category = classification.get("category", "GENERAL")
         confidence = classification.get("confidence", 0.8)
-        return category, confidence
+        return category, confidence, "openai"
     except Exception:
-        return classify_locally(message)
+        category, confidence = classify_locally(message)
+        return category, confidence, "fallback"
 
 
 def build_ticket_context(ticket: dict | None) -> str:
@@ -252,7 +319,7 @@ def build_ticket_context(ticket: dict | None) -> str:
     )
 
 
-def generate_response(category: str, message: str, history: list[dict], ticket: dict | None = None) -> str:
+def generate_response(category: str, message: str, history: list[dict], ticket: dict | None = None) -> tuple[str, str]:
     memory = build_conversation_memory(history, ticket, message)
     system_prompt = (
         f"{EVOLLIS_CONTEXT}\n\n## Instructions pour cette réponse\n"
@@ -282,6 +349,6 @@ def generate_response(category: str, message: str, history: list[dict], ticket: 
             max_tokens=400,
             temperature=0.45,
         )
-        return resp["choices"][0]["message"]["content"]
+        return resp["choices"][0]["message"]["content"], "openai"
     except Exception:
-        return fallback_response(category, message, history, ticket)
+        return fallback_response(category, message, history, ticket), "fallback"

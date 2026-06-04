@@ -1,6 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { changePassword, listAdminTickets, listMyTickets, login, register, sendChatMessage, updateTicketStatus } from './api';
+import { changePassword, getOpenAIDiagnostic, listAdminTickets, listMyTickets, login, register, sendChatMessage, updateTicketStatus } from './api';
 import type { AuthMode, ChatHistoryItem, ChatMessage, Mode, Ticket, TicketStatus, UserProfile } from './types';
+
+const FAQ_ITEMS = [
+  {
+    question: 'Comment fonctionne la location chez Evollis ?',
+    answer: 'Evollis propose de la location longue duree avec mensualites, assurance casse ou vol et extension de garantie selon le contrat.',
+  },
+  {
+    question: 'Que faire si mon appareil est en panne ?',
+    answer: 'Preparez le modele exact, le symptome et depuis quand le souci est apparu. Cela aide a orienter le diagnostic ou la prise en charge.',
+  },
+  {
+    question: 'Comment se passe la fin de contrat ?',
+    answer: 'En fin de contrat, vous pouvez generalement restituer l appareil, demander un upgrade ou etudier une reprise selon votre dossier.',
+  },
+  {
+    question: 'Que verifier pour une question de facturation ?',
+    answer: 'Comparez le montant, la date du prelevement et la reference de contrat avec votre echeance attendue avant d ouvrir une verification.',
+  },
+];
 
 function truncateText(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
@@ -183,9 +202,11 @@ function ChatPanel(props: {
   messages: ChatMessage[];
   input: string;
   loading: boolean;
+  helpOpen: boolean;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onQuick: (text: string) => void;
+  onToggleHelp: () => void;
 }) {
   const quickActions = [
     'Mon prelevement mensuel est incorrect',
@@ -196,6 +217,20 @@ function ChatPanel(props: {
 
   return (
     <>
+      <div className="chat-help-bar">
+        <button className="mode-btn help-btn" type="button" onClick={props.onToggleHelp} title="Comment utiliser le chatbot ?">
+          ? Aide
+        </button>
+        {props.helpOpen && (
+          <div className="help-popover">
+            <div className="ticket-title">Comment utiliser le chatbot</div>
+            <div className="ticket-message">
+              Decrivez simplement votre situation en une ou deux phrases. Plus votre message est precis, plus la reponse sera utile.
+              Vous pouvez ensuite continuer la meme discussion naturellement, ou cliquer sur <strong>Nouvelle demande</strong> pour repartir sur un autre sujet.
+            </div>
+          </div>
+        )}
+      </div>
       <div className="chat-container">
         {!props.messages.length && (
           <div className="welcome">
@@ -262,10 +297,38 @@ function ChatPanel(props: {
   );
 }
 
+function FaqPanel(props: { open: boolean; onClose: () => void }) {
+  if (!props.open) return null;
+
+  return (
+    <section className="faq-panel">
+      <div className="faq-panel-header">
+        <div>
+          <h3>FAQ Evollis</h3>
+          <p>Quelques reponses rapides aux questions les plus frequentes.</p>
+        </div>
+        <button className="mode-btn" type="button" onClick={props.onClose}>Fermer</button>
+      </div>
+      <div className="faq-list">
+        {FAQ_ITEMS.map((item) => (
+          <article key={item.question} className="faq-item">
+            <div className="ticket-title">{item.question}</div>
+            <div className="ticket-message">{item.answer}</div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function AdminView(props: {
   tickets: Ticket[];
   onRefresh: () => void;
   onUpdateStatus: (ticketId: string, status: TicketStatus) => void;
+  onPingAgent: () => void;
+  agentCheckResult: string;
+  faqOpen: boolean;
+  onToggleFaq: () => void;
 }) {
   const openCount = props.tickets.filter((ticket) => ticket.status === 'open').length;
   const progressCount = props.tickets.filter((ticket) => ticket.status === 'in_progress').length;
@@ -280,8 +343,13 @@ function AdminView(props: {
         </div>
         <div className="ticket-toolbar">
           <button className="refresh-btn" type="button" onClick={props.onRefresh}>Rafraichir</button>
+          <button className="refresh-btn" type="button" onClick={props.onPingAgent}>Tester l agent</button>
+          <button className="refresh-btn" type="button" onClick={props.onToggleFaq}>
+            {props.faqOpen ? 'Masquer la FAQ' : 'Voir la FAQ'}
+          </button>
         </div>
       </div>
+      {props.agentCheckResult && <div className="app-feedback error">{props.agentCheckResult}</div>}
       <div className="stats-grid">
         <div className="stat-card"><div className="stat-label">Tickets total</div><div className="stat-value">{props.tickets.length}</div></div>
         <div className="stat-card"><div className="stat-label">Ouverts</div><div className="stat-value">{openCount}</div></div>
@@ -336,6 +404,9 @@ export default function App() {
   const [myTickets, setMyTickets] = useState<Ticket[]>([]);
   const [adminTickets, setAdminTickets] = useState<Ticket[]>([]);
   const [myTicketsExpanded, setMyTicketsExpanded] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [adminAgentCheckResult, setAdminAgentCheckResult] = useState('');
+  const [chatHelpOpen, setChatHelpOpen] = useState(false);
   useEffect(() => {
     if (!user) return;
     void refreshMyTickets();
@@ -386,6 +457,7 @@ export default function App() {
     setHistory([]);
     setCurrentTicketId(null);
     setInput('');
+    setChatHelpOpen(false);
   }
 
   async function handleAuthSubmit() {
@@ -506,6 +578,13 @@ export default function App() {
           categoryLabel: data.category_label,
         },
       ]);
+      if (data.llm_mode === 'clarification') {
+        setAppFeedback('Je n ai pas compris votre demande. Vous pouvez la reformuler ou consulter la FAQ Evollis ci-dessous.');
+        setFaqOpen(true);
+      } else if (data.llm_mode === 'fallback' || data.needs_faq) {
+        setAppFeedback('L agent n est pas pleinement accessible pour le moment. Vous pouvez continuer, reformuler votre demande ou consulter la FAQ Evollis ci-dessous.');
+        setFaqOpen(true);
+      }
       setHistory((prev) => [...prev, { role: 'assistant', content: data.response }]);
       setCurrentTicketId(data.ticket_id || currentTicketId);
       await refreshMyTickets();
@@ -513,9 +592,9 @@ export default function App() {
         await refreshAdminTickets();
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Impossible d envoyer votre demande pour le moment.';
-      setAppFeedback(message);
-      setMessages((prev) => [...prev, { role: 'agent', content: 'Desole, une erreur est survenue. Veuillez reessayer dans quelques instants.' }]);
+      setAppFeedback('Je n ai pas compris votre demande ou l agent n est pas accessible pour le moment. Vous pouvez reformuler votre message ou consulter la FAQ Evollis ci-dessous.');
+      setFaqOpen(true);
+      setMessages((prev) => [...prev, { role: 'agent', content: 'Je n ai pas compris votre demande ou l agent n est pas accessible pour le moment. Vous pouvez reformuler votre message ou consulter la FAQ Evollis.' }]);
     } finally {
       setLoading(false);
     }
@@ -525,6 +604,27 @@ export default function App() {
     await updateTicketStatus(ticketId, status);
     await refreshAdminTickets();
     await refreshMyTickets();
+  }
+
+  async function handlePingAgent() {
+    if (!user) return;
+    try {
+      const diagnostic = await getOpenAIDiagnostic();
+      if (diagnostic.model_call_ok) {
+        setAdminAgentCheckResult('Agent disponible via OpenAI.');
+        return;
+      }
+
+      const details = diagnostic.error ? ` Détail: ${diagnostic.error}` : '';
+      setAdminAgentCheckResult(
+        diagnostic.configured
+          ? `Agent joignable, mais OpenAI ne repond pas correctement.${details}`
+          : `OpenAI n'est pas configure correctement.${details}`
+      );
+    } catch (err) {
+      const details = err instanceof Error ? ` Détail: ${err.message}` : '';
+      setAdminAgentCheckResult(`Agent indisponible. Consultez la FAQ pendant que le service revient.${details}`);
+    }
   }
 
   if (!user) {
@@ -563,6 +663,9 @@ export default function App() {
           Agent disponible
         </div>
         <div className="mode-switch" aria-label="Mode de l'application">
+          <button className="mode-btn" type="button" onClick={() => setFaqOpen((prev) => !prev)}>
+            {faqOpen ? 'Masquer FAQ' : 'FAQ'}
+          </button>
           <button className="mode-btn" type="button" onClick={() => setProfileOpen((prev) => !prev)}>
             {profileOpen ? 'Fermer profil' : 'Profil'}
           </button>
@@ -602,19 +705,31 @@ export default function App() {
               onRefresh={() => void refreshMyTickets()}
               onNewRequest={resetConversation}
             />
+            <FaqPanel open={faqOpen} onClose={() => setFaqOpen(false)} />
             <ChatPanel
               messages={messages}
               input={input}
               loading={loading}
+              helpOpen={chatHelpOpen}
               onInputChange={setInput}
               onSubmit={() => void handleSendMessage()}
               onQuick={(text) => void handleSendMessage(text)}
+              onToggleHelp={() => setChatHelpOpen((prev) => !prev)}
             />
           </div>
         </div>
       ) : (
         <div className="page">
-          <AdminView tickets={adminTickets} onRefresh={() => void refreshAdminTickets()} onUpdateStatus={(id, status) => void handleUpdateStatus(id, status)} />
+          <AdminView
+            tickets={adminTickets}
+            onRefresh={() => void refreshAdminTickets()}
+            onUpdateStatus={(id, status) => void handleUpdateStatus(id, status)}
+            onPingAgent={() => void handlePingAgent()}
+            agentCheckResult={adminAgentCheckResult}
+            faqOpen={faqOpen}
+            onToggleFaq={() => setFaqOpen((prev) => !prev)}
+          />
+          <FaqPanel open={faqOpen} onClose={() => setFaqOpen(false)} />
         </div>
       )}
     </div>

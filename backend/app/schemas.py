@@ -15,6 +15,8 @@ class ChatResponse(BaseModel):
     category_label: str
     confidence: float
     ticket_id: Optional[str] = None
+    llm_mode: str = "fallback"
+    needs_faq: bool = False
 
 
 class TicketCreate(BaseModel):

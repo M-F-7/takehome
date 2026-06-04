@@ -1,4 +1,4 @@
-import type { ChatHistoryItem, ChatResponse, Ticket, TicketsResponse, TicketStatus, UserProfile } from './types';
+import type { ChatHistoryItem, ChatResponse, OpenAIDiagnostic, Ticket, TicketsResponse, TicketStatus, UserProfile } from './types';
 
 const API_BASE = '';
 
@@ -81,4 +81,8 @@ export function updateTicketStatus(ticketId: string, status: TicketStatus) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   });
+}
+
+export function getOpenAIDiagnostic() {
+  return request<OpenAIDiagnostic>('/health/openai');
 }
