@@ -1,21 +1,23 @@
 :root {
-  --bg: #0d0f14;
-  --surface: #161921;
-  --surface-2: #1e222d;
-  --border: #2a2f3d;
-  --accent: #4f8ef7;
-  --accent-dim: rgba(79, 142, 247, 0.12);
-  --text: #e8eaf0;
-  --text-muted: #6b7280;
-  --text-dim: #9ca3af;
+  --bg: #09131a;
+  --surface: rgba(15, 29, 39, 0.88);
+  --surface-2: #122432;
+  --surface-3: #173446;
+  --border: rgba(120, 180, 204, 0.16);
+  --accent: #39a7c9;
+  --accent-strong: #6be0cb;
+  --accent-dim: rgba(57, 167, 201, 0.12);
+  --text: #eef7fb;
+  --text-muted: #7f98a6;
+  --text-dim: #b2c5cf;
   --billing: #f59e0b;
   --technical: #ef4444;
-  --tradein: #10b981;
-  --general: #8b5cf6;
+  --tradein: #32d0a8;
+  --general: #5cc8ff;
   --billing-bg: rgba(245, 158, 11, 0.1);
   --technical-bg: rgba(239, 68, 68, 0.1);
-  --tradein-bg: rgba(16, 185, 129, 0.1);
-  --general-bg: rgba(139, 92, 246, 0.1);
+  --tradein-bg: rgba(50, 208, 168, 0.12);
+  --general-bg: rgba(92, 200, 255, 0.12);
 }
 
 * {
@@ -31,7 +33,10 @@ body,
 body {
   margin: 0;
   font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at top left, rgba(50, 208, 168, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(92, 200, 255, 0.16), transparent 32%),
+    linear-gradient(180deg, #081118 0%, #0c1b24 48%, #0a141b 100%);
   color: var(--text);
 }
 
@@ -73,14 +78,114 @@ textarea {
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: 16px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 60px rgba(3, 10, 15, 0.28);
 }
 
 .auth-panel.auth-gate {
   width: min(720px, 100%);
-  padding: 28px;
+  padding: 34px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+}
+
+.auth-hero {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(107, 224, 203, 0.14);
+}
+
+.auth-kicker {
+  color: var(--accent-strong);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.auth-title {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  max-width: 560px;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-lockup.compact {
+  gap: 10px;
+}
+
+.brand-mark {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+}
+
+.brand-lockup.compact .brand-mark {
+  width: 40px;
+  height: 40px;
+}
+
+.brand-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(107, 224, 203, 0.18);
+}
+
+.brand-ring.ring-one {
+  transform: rotate(10deg);
+  background: linear-gradient(135deg, rgba(92, 200, 255, 0.2), rgba(50, 208, 168, 0.08));
+}
+
+.brand-ring.ring-two {
+  inset: 6px;
+  transform: rotate(-12deg);
+  border-color: rgba(92, 200, 255, 0.28);
+}
+
+.brand-core {
+  position: absolute;
+  inset: 11px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #05212d;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  box-shadow: 0 10px 26px rgba(57, 167, 201, 0.25);
+}
+
+.brand-lockup.compact .brand-core {
+  inset: 8px;
+  font-size: 11px;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.brand-lockup.compact .brand-name {
+  font-size: 16px;
+}
+
+.brand-tagline {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .panel-title {
@@ -91,6 +196,7 @@ textarea {
 .panel-subtitle {
   font-size: 13px;
   color: var(--text-muted);
+  line-height: 1.6;
 }
 
 .auth-home,
@@ -114,7 +220,7 @@ textarea {
 .ticket-action,
 .quick-btn {
   border: 1px solid var(--border);
-  background: var(--surface-2);
+  background: rgba(18, 36, 50, 0.92);
   color: var(--text-dim);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -139,9 +245,9 @@ textarea {
 
 .auth-choice.active,
 .mode-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  border-color: transparent;
+  color: #05212d;
 }
 
 .auth-choice:hover,
@@ -150,8 +256,9 @@ textarea {
 .ticket-action:hover,
 .quick-btn:hover,
 .ticket-filter:hover {
-  border-color: var(--accent);
+  border-color: rgba(107, 224, 203, 0.38);
   color: var(--text);
+  transform: translateY(-1px);
 }
 
 .auth-actions input,
@@ -185,29 +292,15 @@ header {
   justify-content: space-between;
   gap: 16px;
   padding: 16px 24px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  border-bottom: 1px solid rgba(107, 224, 203, 0.12);
+  background: rgba(9, 19, 26, 0.84);
+  backdrop-filter: blur(18px);
   flex-shrink: 0;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: var(--accent);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: white;
 }
 
 .logo-text {
@@ -272,8 +365,8 @@ header {
 
 .user-note {
   padding: 12px 14px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(79, 142, 247, 0.08), rgba(79, 142, 247, 0.03));
+  border: 1px solid rgba(107, 224, 203, 0.14);
+  background: linear-gradient(180deg, rgba(57, 167, 201, 0.12), rgba(50, 208, 168, 0.05));
   border-radius: 12px;
   color: var(--text-dim);
   font-size: 13px;
@@ -311,8 +404,8 @@ header {
 .faq-item {
   padding: 14px;
   border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
+  border: 1px solid rgba(107, 224, 203, 0.1);
+  background: linear-gradient(180deg, rgba(18, 36, 50, 0.92), rgba(23, 52, 70, 0.8));
 }
 
 .my-tickets-header {
@@ -402,7 +495,7 @@ header {
 .ticket-response {
   padding: 12px;
   border-radius: 12px;
-  background: var(--surface-2);
+  background: rgba(18, 36, 50, 0.9);
   border: 1px solid var(--border);
   font-size: 13px;
   line-height: 1.6;
@@ -437,7 +530,7 @@ header {
   padding: 14px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: rgba(11, 24, 33, 0.96);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
   z-index: 15;
 }
@@ -456,8 +549,8 @@ header {
 .welcome-icon {
   width: 64px;
   height: 64px;
-  background: var(--accent-dim);
-  border: 1px solid rgba(79, 142, 247, 0.2);
+  background: linear-gradient(135deg, rgba(57, 167, 201, 0.18), rgba(50, 208, 168, 0.18));
+  border: 1px solid rgba(107, 224, 203, 0.22);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -526,8 +619,8 @@ header {
 }
 
 .message.user .bubble {
-  background: var(--accent);
-  color: white;
+  background: linear-gradient(135deg, var(--accent), #2e89a7);
+  color: #f5fbff;
   border-radius: 12px 4px 12px 12px;
 }
 
@@ -546,16 +639,16 @@ header {
 
 .input-area {
   padding: 16px 24px 20px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
+  border-top: 1px solid rgba(107, 224, 203, 0.1);
+  background: rgba(10, 22, 30, 0.84);
 }
 
 .input-wrap {
   display: flex;
   gap: 10px;
   align-items: flex-end;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: rgba(18, 36, 50, 0.92);
+  border: 1px solid rgba(107, 224, 203, 0.12);
   border-radius: 12px;
   padding: 10px 14px;
 }
@@ -575,12 +668,13 @@ textarea {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow: 0 10px 24px rgba(57, 167, 201, 0.28);
 }
 
 .send-btn:disabled {
@@ -637,6 +731,7 @@ textarea {
   align-items: flex-start;
   flex-wrap: wrap;
   padding: 18px;
+  background: linear-gradient(135deg, rgba(12, 31, 42, 0.96), rgba(17, 57, 73, 0.82));
 }
 
 .stats-grid {
@@ -647,6 +742,7 @@ textarea {
 
 .stat-card {
   padding: 14px;
+  background: linear-gradient(180deg, rgba(15, 29, 39, 0.92), rgba(18, 36, 50, 0.82));
 }
 
 .stat-label {

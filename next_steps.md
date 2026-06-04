@@ -75,7 +75,6 @@ TODO:
 
 syteme de context (a finir)
 modif un peu l' UI
-    - enlever le bouton profil dans le menu Mes demandes)
     - ptit logo au debut machin homepage, ui global (couleurs, polices etc)
 register en admin
 en admin pouvoir filtrer les différents types de tickets

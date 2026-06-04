@@ -34,6 +34,22 @@ function saveStoredUser(user: UserProfile | null) {
   void user;
 }
 
+function BrandLockup(props: { compact?: boolean }) {
+  return (
+    <div className={`brand-lockup ${props.compact ? 'compact' : ''}`.trim()}>
+      <div className="brand-mark" aria-hidden="true">
+        <div className="brand-ring ring-one" />
+        <div className="brand-ring ring-two" />
+        <div className="brand-core">EV</div>
+      </div>
+      <div>
+        <div className="brand-name">Evollis</div>
+        <div className="brand-tagline">Device as a Service, support & circularite</div>
+      </div>
+    </div>
+  );
+}
+
 function LoginScreen(props: {
   mode: AuthMode | null;
   authEmail: string;
@@ -55,6 +71,11 @@ function LoginScreen(props: {
   return (
     <div className="auth-screen">
       <div className="auth-panel auth-gate">
+        <div className="auth-hero">
+          <BrandLockup />
+          <div className="auth-kicker">Support client nouvelle generation</div>
+          <div className="auth-title">Un point d'entree simple pour vos questions abonnement, appareil et fin de contrat.</div>
+        </div>
         <div className="panel-subtitle">{title}</div>
         <div className="auth-home">
           <button
@@ -642,11 +663,7 @@ export default function App() {
     <div className="app-shell">
       <header>
         <div className="logo">
-          <div className="logo-icon">EV</div>
-          <div>
-            <div className="logo-text">Evollis</div>
-            <div className="logo-sub">Support Client</div>
-          </div>
+          <BrandLockup compact />
         </div>
         <div className="status-badge">
           <div className="status-dot" />
